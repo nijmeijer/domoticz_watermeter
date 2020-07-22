@@ -32,8 +32,6 @@ class BasePlugin:
             Domoticz.Debugging(1)
 
         if (len(Devices) == 0):
-            #Domoticz.Device(Unit=1).Delete()
-            #Domoticz.Device(Name="WaterMeter Neads", Unit=1, TypeName="Custom", Used=1).Create()
             Domoticz.Device(Name="WaterMeter Neads", Unit=1, TypeName="Counter Incremental", Type=243, Subtype=28, Used=1).Create()
 
         Domoticz.Debug("Device created.")
@@ -41,7 +39,7 @@ class BasePlugin:
 
         self.pollPeriod = 1 * int(Parameters["Mode2"])
         self.pollCount = self.pollPeriod - 1
-        Domoticz.Heartbeat(2) #10
+        Domoticz.Heartbeat(10)
 
     def onStop(self):
         Domoticz.Debug("onStop called")
@@ -68,14 +66,15 @@ class BasePlugin:
         Domoticz.Debug("onHeartBeat called:"+str(self.pollCount)+"/"+str(self.pollPeriod))
         if self.pollCount >= self.pollPeriod:
             watermeterapi = watermeter(Parameters['Address'],Parameters['Port'])
-            if 1==1 : #watermeterapi.request_hello():
+            if 1==1 :
                 curmeas = watermeterapi.request_info()
                 Domoticz.Debug("watermeter plugin received: " + repr(curmeas))
                 Domoticz.Debug("watermeter current value: " + repr(Devices[1].nValue))
                 Domoticz.Debug("watermeter my prevsample: " + repr(self.PrevSample))
+                # if we are sure that we have a valid increment, pass it on to Domoticz
                 if self.PrevSample>0 and curmeas > 0 and curmeas>self.PrevSample :
                   newval = Devices[1].nValue + curmeas - self.PrevSample
-                  UpdateDevice(1,(curmeas - self.PrevSample),(curmeas - self.PrevSample),100)
+                  UpdateDevice(1,(curmeas - self.PrevSample),(curmeas - self.PrevSample))
 
                 self.PrevSample=curmeas
 
@@ -119,7 +118,7 @@ def onHeartbeat():
     global _plugin
     _plugin.onHeartbeat()
 
-def UpdateDevice(Unit, nValue, sValue, batterylevel):
+def UpdateDevice(Unit, nValue, sValue):
     # Make sure that the Domoticz device still exists (they can be deleted) before updating it 
     if (Unit in Devices):
         if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
