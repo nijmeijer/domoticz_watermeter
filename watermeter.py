@@ -4,19 +4,7 @@ import Domoticz
 import socket
 
 class watermeter:
-
-    infopackage_pre = 'w'
-    m_counter = 1
-    token = None
-    m_key = None
-    m_iv = None
- 
-    deviceid = None
-    stamp = None
-    packagelength = 0
-    header = None
-    headertemp = None
-
+   
     def __init__(self, host=None, port=None): #54321
         self.host = host
         self.port = int(port)
@@ -49,8 +37,11 @@ class watermeter:
            Domoticz.Debug  ('socket problem')
 
         try:
+          # replay format "watermeter 24 24" 
+          # the numbers should be the same (if not => transmission error)
           str1 = reply.decode("utf-8", errors="ignore")
           #Domoticz.Debug(str1)
+          # split the string in numbers for validity check
           numbers = [int(word) for word in str1.split() if word.isdigit()]
           #Domoticz.Debug(repr(numbers))
           if numbers[0]==numbers[1] :
