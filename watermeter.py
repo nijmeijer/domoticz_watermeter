@@ -9,10 +9,13 @@ class watermeter:
         self.host = host
         self.port = int(port)
         try:
-            #Domoticz.Debug ('Socket open...')
+            Domoticz.Debug ('Socket open...')
             self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
             self.s.settimeout(2)
-            #Domoticz.Debug ('Socket opened')
+            Domoticz.Debug ('Socket opened')
+            self.s.connect((self.host, self.port))
+            Domoticz.Debug ('Socket connected')
+
 
         except socket.error as msg:
             Domoticz.Debug ('Error Code: ' + str(msg))
@@ -23,7 +26,6 @@ class watermeter:
         try:
 
             #Domoticz.Debug ('about to sent ')
-            self.s.connect((self.host, self.port))
             self.s.send(b'watermeter')
             #Domoticz.Debug ('sent ')
 

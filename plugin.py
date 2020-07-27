@@ -39,7 +39,12 @@ class BasePlugin:
 
         self.pollPeriod = 1 * int(Parameters["Mode2"])
         self.pollCount = self.pollPeriod - 1
+
+        self.watermeterapi = watermeter(Parameters['Address'],Parameters['Port'])
+
         Domoticz.Heartbeat(10)
+
+
 
     def onStop(self):
         Domoticz.Debug("onStop called")
@@ -65,9 +70,9 @@ class BasePlugin:
     def onHeartbeat(self):
         Domoticz.Debug("onHeartBeat called:"+str(self.pollCount)+"/"+str(self.pollPeriod))
         if self.pollCount >= self.pollPeriod:
-            watermeterapi = watermeter(Parameters['Address'],Parameters['Port'])
+            #watermeterapi = watermeter(Parameters['Address'],Parameters['Port'])
             if 1==1 :
-                curmeas = watermeterapi.request_info()
+                curmeas = self.watermeterapi.request_info()
                 Domoticz.Debug("watermeter plugin received: " + repr(curmeas))
                 Domoticz.Debug("watermeter current value: " + repr(Devices[1].nValue))
                 Domoticz.Debug("watermeter my prevsample: " + repr(self.PrevSample))
