@@ -87,7 +87,10 @@ class BasePlugin:
                   UpdateDevice(1,(curmeas - self.PrevSample),(curmeas - self.PrevSample))
                   Domoticz.Debug("Device updated")
                   self.PrevSample=curmeas
-                  self.IdleCount = 0 
+                  self.IdleCount = 0
+                else :
+                 if curmeas>0 :
+                   self.PrevSample=curmeas
             self.pollCount = 0 #Reset Pollcount
         else:
             self.pollCount += 1
