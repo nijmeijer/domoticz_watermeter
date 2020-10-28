@@ -1,9 +1,9 @@
 """
-<plugin key="Watermeter" name="Watermeter Sensor" author="nijmeijer" version="1.0.1">
+<plugin key="Watermeter2" name="Watermeter Sensor2" author="nijmeijer" version="1.0.2">
     <params>
         <param field="Address" label="IP Address" width="200px" required="true" default="192.168.1.86"/>
-        <param field="Port" label="Port" width="50px" required="true" default="54321"/>
-        <param field="Mode2" label="Poll Period (min)" width="75px" required="true" default="2"/>
+        <param field="Port" label="Port" width="50px" required="true" default="5001"/>
+        <param field="Mode2" label="Poll Period (min)" width="75px" required="true" default="1"/>
         <param field="Mode6" label="Debug" width="75px">
             <options>
                 <option label="True" value="Debug"/>
@@ -15,7 +15,7 @@
 """
 
 import Domoticz
-from watermeter import watermeter
+from watermeter2 import watermeter2
 import json
 
 class BasePlugin:
@@ -24,6 +24,7 @@ class BasePlugin:
         self.pollPeriod = 0
         self.pollCount = 0
         self.PrevSample = 0
+        self.IdleCount = 0
         return
 
     def onStart(self):
@@ -32,7 +33,7 @@ class BasePlugin:
             Domoticz.Debugging(1)
 
         if (len(Devices) == 0):
-            Domoticz.Device(Name="WaterMeter Neads", Unit=1, TypeName="Counter Incremental", Type=243, Subtype=28, Used=1).Create()
+            Domoticz.Device(Name="WaterMeter Neads2", Unit=1, TypeName="Counter Incremental", Type=243, Subtype=28, Used=1).Create()
 
         Domoticz.Debug("Device created.")
         DumpConfigToLog()
@@ -40,9 +41,9 @@ class BasePlugin:
         self.pollPeriod = 1 * int(Parameters["Mode2"])
         self.pollCount = self.pollPeriod - 1
 
-        self.watermeterapi = watermeter(Parameters['Address'],Parameters['Port'])
+        self.watermeterapi = watermeter2(Parameters['Address'],Parameters['Port'])
 
-        Domoticz.Heartbeat(10)
+        Domoticz.Heartbeat(2)
 
 
 
@@ -68,24 +69,36 @@ class BasePlugin:
         self.isConnected = False 
 
     def onHeartbeat(self):
-        Domoticz.Debug("onHeartBeat called:"+str(self.pollCount)+"/"+str(self.pollPeriod))
-        if self.pollCount >= self.pollPeriod:
+        # Domoticz.Debug("onHeartBeat called:"+str(self.pollCount)+"/"+str(self.pollPeriod))
+        if self.pollCount >= self.pollPeriod*30: #PollPeriod is 0...n minutes, PollCount increments every 2 secs
             #watermeterapi = watermeter(Parameters['Address'],Parameters['Port'])
+            #self.watermeterapi = watermeter2(Parameters['Address'],Parameters['Port'])
+
             if 1==1 :
                 curmeas = self.watermeterapi.request_info()
-                Domoticz.Debug("watermeter plugin received: " + repr(curmeas))
-                Domoticz.Debug("watermeter current value: " + repr(Devices[1].nValue))
-                Domoticz.Debug("watermeter my prevsample: " + repr(self.PrevSample))
+                Domoticz.Debug("watermeter2 plugin received: " + repr(curmeas))
+                # Domoticz.Debug("watermeter2 current value: " + repr(Devices[1].nValue))
+                Domoticz.Debug("watermeter2 my prevsample: " + repr(self.PrevSample))
                 # if we are sure that we have a valid increment, pass it on to Domoticz
                 if self.PrevSample>0 and curmeas > 0 and curmeas>self.PrevSample :
+                  #if curmeas > 0 and curmeas>self.PrevSample :
                   newval = Devices[1].nValue + curmeas - self.PrevSample
+                  Domoticz.Debug("Updating device")
                   UpdateDevice(1,(curmeas - self.PrevSample),(curmeas - self.PrevSample))
-
-                self.PrevSample=curmeas
-
+                  Domoticz.Debug("Device updated")
+                  self.PrevSample=curmeas
+                  self.IdleCount = 0 
             self.pollCount = 0 #Reset Pollcount
         else:
             self.pollCount += 1
+
+        # Update Anyway, even if the counter stands still.
+        # it triggers a display update
+        self.IdleCount = self.IdleCount + 1
+        if self.IdleCount > (5-1) :
+            UpdateDevice(1,0,0)
+            self.IdleCount = 0
+ 
 
 
 global _plugin
