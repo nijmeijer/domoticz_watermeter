@@ -50,7 +50,11 @@ class BasePlugin:
             Domoticz.Device(Name="WaterMeter Duration Min", Unit=3,  Type=243, Subtype=28, Switchtype=5, Used=0).Create() # counter incremental, Time
             #pass
 
-        UpdateDevice(3,0,-1) # initialize timer svalue=neg
+        if (len(Devices) == 3):
+            Domoticz.Device(Name="WaterMeter Duration Latest Min", Unit=4,  Type=243, Subtype=31,  Used=0).Create() # counter incremental, Time
+            #pass
+
+        #UpdateDevice(3,0,-1) # initialize timer svalue=neg
         Domoticz.Debug("Devices created.")
         DumpConfigToLog()
 
@@ -67,8 +71,12 @@ class BasePlugin:
         UpdateDevice(2,0,0)
         # increment duration by 0
         UpdateDevice(3,0,0) 
+        # increment duration by 0
+        UpdateDevice(4,0,0)   # negative sValue resets counter
+        self.IncrementalTimer = 0 
+        #UpdateDevice(4,0,0)   # negative sValue resets counter
 
-        Domoticz.Heartbeat(10)
+        Domoticz.Heartbeat(5)
 
 
 
@@ -108,16 +116,23 @@ class BasePlugin:
                 curmeas, currenttime = self.watermeterapi.request_info()
                 Domoticz.Debug("watermeter2 flow current/prev time: " + repr(currenttime) + "/" +repr(self.prevtime))
 
-                if self.prevtime>0 : #and (currenttime - self.prevtime) > 1000 :  # flow=0 when time unchanged
-                  try :
+                #if self.prevtime>0 : #and (currenttime - self.prevtime) > 1000 :  # flow=0 when time unchanged
+                #  try :
+                if True:
                      duration_between_updates = (currenttime -  self.prevtime)
-                     flow=round(60*1000/(currenttime -  self.prevtime)) # ms/tick -> liters/min
-                     UpdateDevice(2,0,flow)
-                  except :
-                    flow=0
-                    duration_between_updates = 0
-                else :
-                  flow=0
+                     if duration_between_updates < 100000 and duration_between_updates>0 :
+                       flow=round(10*60*1000/(currenttime -  self.prevtime))/10 # ms/tick -> liters/min
+                       Domoticz.Debug("watermeter2 flow  " + repr(flow))
+                       UpdateDevice(2,0,flow)
+                     else :
+                       flow = 0
+                #  except :
+                #    flow=0
+                #    duration_between_updates = 0
+                #    #self.prevtime=currenttime
+                #else :
+                #  flow=0
+                #  #self.prevtime=currenttime
 
                 #last increment is too long ago, assume flow=0
                 Domoticz.Debug("watermeter2 flow timeout check ")
@@ -125,12 +140,15 @@ class BasePlugin:
                   flow=0
                   Domoticz.Debug("watermeter2 flow set to 0 because of timeout " + repr(self.LastIncrementAge) )
                   UpdateDevice(2,0,flow)
+                  #UpdateDevice(4,0,-1) # Reset Latest WaterDuration
+                  self.IncrementalTimer=0
 
-                if currenttime > 0 :
-                  self.prevtime=currenttime
+                #if currenttime > 0 :
+                #self.prevtime=currenttime
 
                 if (self.PrevSample != curmeas) :
                   self.LastIncrementAge = 0
+                  self.prevtime=currenttime
                 self.LastIncrementAge +=  1
 
                 #Domoticz.Debug("watermeter2 plugin received: " + repr(curmeas))
@@ -152,14 +170,25 @@ class BasePlugin:
 
         # Update Anyway, even if the counter stands still.
         # it triggers a display update
+        Domoticz.Debug("watermeter2 update anyway " + repr(self.IdleCount))
         self.IdleCount = self.IdleCount + 1
         if self.IdleCount > (5-1) :
             UpdateDevice(1,0,0)
             self.IdleCount = 0
 
         # keep track of time for a flow>0
-        if flow > 0 :
-           UpdateDevice(3,0,duration_between_updates/1000) # increment by 2 seconds
+        Domoticz.Debug("watermeter2 flow duration: " + repr(flow) + " / " + repr(duration_between_updates))
+        if flow > 0 : #and duration_between_updates < 100000:
+           UpdateDevice(3,0,round(10*duration_between_updates/1000)/10) # increment by 2 seconds Normal WaterDuration
+           self.IncrementalTimer=self.IncrementalTimer+round(10*duration_between_updates/1000)/10
+           #UpdateDevice(4,0,self.IncrementalTimer)
+           #UpdateDevice(3,0,10/60*1000) # increment by 10 seconds (=heartbeat)
+           Domoticz.Debug("watermeter2 flow duration updated: " + repr(duration_between_updates/1000) + " sec ")
+
+        #if ( flow == 0 ) :
+        Domoticz.Debug("watermeter2 flow duration last updated: " + repr(self.IncrementalTimer/60) + " min ")
+        UpdateDevice(4,0,self.IncrementalTimer/60)
+
 
 
 global _plugin
