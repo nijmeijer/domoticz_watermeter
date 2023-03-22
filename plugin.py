@@ -54,7 +54,6 @@ class BasePlugin:
             Domoticz.Device(Name="WaterMeter Duration Latest Min", Unit=4,  Type=243, Subtype=31,  Used=0).Create() # counter incremental, Time
             #pass
 
-        #UpdateDevice(3,0,-1) # initialize timer svalue=neg
         Domoticz.Debug("Devices created.")
         DumpConfigToLog()
 
@@ -72,9 +71,8 @@ class BasePlugin:
         # increment duration by 0
         UpdateDevice(3,0,0) 
         # increment duration by 0
-        UpdateDevice(4,0,0)   # negative sValue resets counter
+        UpdateDevice(4,0,0)
         self.IncrementalTimer = 0 
-        #UpdateDevice(4,0,0)   # negative sValue resets counter
 
         Domoticz.Heartbeat(5)
 
@@ -109,15 +107,11 @@ class BasePlugin:
         flow = 0
         # Domoticz.Debug("onHeartBeat called:"+str(self.pollCount)+"/"+str(self.pollPeriod))
         if self.pollCount >= self.pollPeriod*30: #PollPeriod is 0...n minutes, PollCount increments every 2 secs
-            #watermeterapi = watermeter(Parameters['Address'],Parameters['Port'])
-            #self.watermeterapi = watermeter2(Parameters['Address'],Parameters['Port'])
 
             if 1==1 :
                 curmeas, currenttime = self.watermeterapi.request_info()
                 Domoticz.Debug("watermeter2 flow current/prev time: " + repr(currenttime) + "/" +repr(self.prevtime))
 
-                #if self.prevtime>0 : #and (currenttime - self.prevtime) > 1000 :  # flow=0 when time unchanged
-                #  try :
                 if True:
                      duration_between_updates = (currenttime -  self.prevtime)
                      if duration_between_updates < 100000 and duration_between_updates>0 :
@@ -126,13 +120,6 @@ class BasePlugin:
                        UpdateDevice(2,0,flow)
                      else :
                        flow = 0
-                #  except :
-                #    flow=0
-                #    duration_between_updates = 0
-                #    #self.prevtime=currenttime
-                #else :
-                #  flow=0
-                #  #self.prevtime=currenttime
 
                 #last increment is too long ago, assume flow=0
                 Domoticz.Debug("watermeter2 flow timeout check ")
@@ -143,9 +130,6 @@ class BasePlugin:
                   #UpdateDevice(4,0,-1) # Reset Latest WaterDuration
                   self.IncrementalTimer=0
 
-                #if currenttime > 0 :
-                #self.prevtime=currenttime
-
                 if (self.PrevSample != curmeas) :
                   self.LastIncrementAge = 0
                   self.prevtime=currenttime
@@ -155,7 +139,6 @@ class BasePlugin:
                 Domoticz.Debug("watermeter2 my prevsample: " + repr(self.PrevSample) + " new received: " + repr(curmeas))
                 # if we are sure that we have a valid increment, pass it on to Domoticz
                 if self.PrevSample>0 and curmeas > 0 and curmeas>self.PrevSample :
-                  #if curmeas > 0 and curmeas>self.PrevSample :
                   newval = Devices[1].nValue + curmeas - self.PrevSample
                   UpdateDevice(1,(curmeas - self.PrevSample),(curmeas - self.PrevSample))
                   self.PrevSample=curmeas
@@ -181,11 +164,8 @@ class BasePlugin:
         if flow > 0 : #and duration_between_updates < 100000:
            UpdateDevice(3,0,round(10*duration_between_updates/1000)/10) # increment by 2 seconds Normal WaterDuration
            self.IncrementalTimer=self.IncrementalTimer+round(10*duration_between_updates/1000)/10
-           #UpdateDevice(4,0,self.IncrementalTimer)
-           #UpdateDevice(3,0,10/60*1000) # increment by 10 seconds (=heartbeat)
            Domoticz.Debug("watermeter2 flow duration updated: " + repr(duration_between_updates/1000) + " sec ")
 
-        #if ( flow == 0 ) :
         Domoticz.Debug("watermeter2 flow duration last updated: " + repr(self.IncrementalTimer/60) + " min ")
         UpdateDevice(4,0,self.IncrementalTimer/60)
 
@@ -233,17 +213,6 @@ def UpdateDevice(Unit, nValue, sValue):
             Devices[Unit].Update(nValue, str(sValue))
             Domoticz.Debug("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
     return
-
-#def UpdateDevice_sonly(Unit, sValue):
-#  # Make sure that the Domoticz device still exists (they can be deleted) before updating it
-#  try:
-#    a=print("{0:f}".format(sValue))
-#    if (Unit in Devices):
-#         Devices[Unit].Update(0, a)
-#         Domoticz.Debug("Update "+a+" (" + Devices[Unit].Name+")")
-#    return
-#  except:
-#    pass
 
 
 # Generic helper functions
