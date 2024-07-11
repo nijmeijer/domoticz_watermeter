@@ -109,7 +109,12 @@ class BasePlugin:
         if self.pollCount >= self.pollPeriod*30: #PollPeriod is 0...n minutes, PollCount increments every 2 secs
 
             if 1==1 :
-                curmeas, currenttime = self.watermeterapi.request_info()
+                try:
+                  curmeas, currenttime = self.watermeterapi.request_info()
+                except:
+                  curmeas = 0
+                  currenttime = 0
+
                 Domoticz.Debug("watermeter2 flow current/prev time: " + repr(currenttime) + "/" +repr(self.prevtime))
 
                 if True:
